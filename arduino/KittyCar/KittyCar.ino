@@ -10,10 +10,13 @@ void setup() {
   // pin 13 triggers the Frolic BOLT
   pinMode(13, OUTPUT);
   digitalWrite(13, LOW);
+  
+  // pin 12 triggers the auto-feeder
+  pinMode(12, OUTPUT);
+  digitalWrite(12, LOW);
 }
 
 void loop() {
-  // print the string when a newline arrives:
   if (stringComplete) {
     
     if (inputString[0] == 't'){
@@ -21,7 +24,12 @@ void loop() {
       delay(100);
       digitalWrite(13, LOW);
     }
-    Serial.println(inputString); 
+    else if(inputString[0] == 's'){
+      digitalWrite(12, HIGH);
+      delay(5000);
+      digitalWrite(12, LOW);
+    }
+    //Serial.println(inputString); 
     // clear the string:
     inputString = "";
     stringComplete = false;
