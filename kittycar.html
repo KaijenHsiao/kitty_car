@@ -10,8 +10,18 @@
   /**
    * Setup all visualization elements and connect to ROS when the page is loaded. 
    */
-  var toggle;
-  var toggle_msg;
+  var laserTopic;
+  var emptyMsg;
+  var feederTopic;
+  var modeService;
+  var wakeupRequest;
+  var sleepRequest;
+  var moveTopic;
+  var turnLeftMsg;
+  var turnRightMsg;
+  var driveForwardMsg;
+  var driveBackwardMsg;
+
   function init() {
     // Create the main viewer.
     var viewer = new MJPEGCANVAS.Viewer({
@@ -27,16 +37,142 @@
       url : 'ws://localhost:9090'
     });
 
-    //Empty topic+message to use in toggling laser
-    toggle = new ROSLIB.Topic({
+    //Topic to use in toggling laser
+    laserTopic = new ROSLIB.Topic({
       ros : ros,
       name : '/laser',
       messageType : 'std_msgs/Empty'
     });
-    toggle_msg = new ROSLIB.Message({});
+
+    //Empty message to use for both laser and feeder
+    emptyMsg = new ROSLIB.Message({});
+
+    //topic to use in rotating feeder
+    feederTopic = new ROSLIB.Topic({
+      ros : ros,
+      name : '/feeder',
+      messageType : 'std_msgs/Empty'
+    });
+
+    //Topic for moving robot
+    moveTopic = new ROSLIB.Topic({
+      ros : ros,
+      name : '/cmd_vel_mux/input/teleop',
+      messageType : 'geometry_msgs/Twist'
+    });
+
+    //Message for turning left
+    turnLeftMsg = new ROSLIB.Message({
+      linear : {
+        x : 0.0,
+        y : 0.0,
+        z : 0.0
+      },
+      angular : {
+        x : 0.0,
+        y : 0.0,
+        z : 0.5
+      }
+    });
+
+    //Message for turning right
+    turnRightMsg = new ROSLIB.Message({
+      linear : {
+        x : 0.0,
+        y : 0.0,
+        z : 0.0
+      },
+      angular : {
+        x : 0.0,
+        y : 0.0,
+        z : -0.5
+      }
+    });
+
+    //Message for driving forward
+    forwardMsg = new ROSLIB.Message({
+      linear : {
+        x : 0.1,
+        y : 0.0,
+        z : 0.0
+      },
+      angular : {
+        x : 0.0,
+        y : 0.0,
+        z : 0.0
+      }
+    });
+
+    //Message for driving backwards
+    backwardMsg = new ROSLIB.Message({
+      linear : {
+        x : -0.1,
+        y : 0.0,
+        z : 0.0
+      },
+      angular : {
+        x : 0.0,
+        y : 0.0,
+        z : 0.0
+      }
+    });
+
+    //Service for waking up turtlebot
+    modeClient = new ROSLIB.Service({
+      ros : ros,
+      name : '/turtlebot_node/set_operation_mode',
+      serviceType : 'create_node/SetTurtlebotMode'
+    });
+
+    //Request for waking up turtlebot
+    wakeupRequest = new ROSLIB.ServiceRequest({
+      mode : 3
+    });
+
+    //Request for putting turtlebot back to sleep
+    sleepRequest = new ROSLIB.ServiceRequest({
+      mode : 1
+    });
+
   }  
+
   function toggleLaser(){
-    toggle.publish(toggle_msg)
+    laserTopic.publish(emptyMsg)
+  }
+
+  function rotateFeeder(){
+    feederTopic.publish(emptyMsg)
+  }
+
+  function wakeupRobot(){
+    modeClient.callService(wakeupRequest, function(result) {
+      console.log('Result for wakeup service call on '
+         + modeClient.name
+         + ': '
+         + result.valid_mode);
+    });
+  }
+
+  function sleepRobot(){
+    modeClient.callService(sleepRequest, function(result) {
+      console.log('Result for sleep service call on '
+         + modeClient.name
+         + ': '
+         + result.valid_mode);
+    });
+  }
+
+  function turnLeft(){
+    moveTopic.publish(turnLeftMsg)
+  }
+  function turnRight(){
+    moveTopic.publish(turnRightMsg)
+  }
+  function driveForward(){
+    moveTopic.publish(forwardMsg)
+  }
+  function driveBackward(){
+    moveTopic.publish(backwardMsg)
   }
 
 </script>
@@ -47,6 +183,13 @@
   <div id="mjpeg"></div>
 
   <button onclick="toggleLaser()">Toggle Laser</button>
+  <button onclick="rotateFeeder()">Rotate Feeder</button>
+  <button onclick="wakeupRobot()">Wake Up Robot</button>
+  <button onclick="sleepRobot()">Sleep Robot</button>
+  <button onclick="turnLeft()">Left</button>
+  <button onclick="turnRight()">Right</button>
+  <button onclick="driveForward()">Forward</button>
+  <button onclick="driveBackward()">Back</button>
 
 </body>
 </html>

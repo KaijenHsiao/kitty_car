@@ -39,13 +39,23 @@ def toggle_laser():
     arduino_serial.write("t\n")
     arduino_serial.flush()
 
+def rotate_feeder():
+    arduino_serial.flushInput()
+    arduino_serial.write("s\n")
+    arduino_serial.flush()
+
 def laser_callback(msg):
     rospy.loginfo("toggling laser")
     toggle_laser()
 
+def feeder_callback(msg):
+    rospy.loginfo("rotating feeder")
+    rotate_feeder()
+
 rospy.init_node('kitty_car_serial')
 arduino_serial = connect_to_arduino()
 rospy.Subscriber("laser", Empty, laser_callback)
+rospy.Subscriber("feeder", Empty, feeder_callback)
 
 while not rospy.is_shutdown():
     rospy.spin()
